@@ -1,1 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pikmin 2 Speedrunning - Seasonal Leaderboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      background: #0a1a0a;
+      color: #e0f0d8;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0d2e0d, #1a5c1a);
+      padding: 20px 32px;
+      border-bottom: 2px solid #4a9e4a;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: #a8e6a8;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      flex: 1;
+    }
+
+    .season-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .season-select-wrap label {
+      color: #7ec87e;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    #seasonSelect {
+      background: #1a4a1a;
+      border: 1px solid #4a9e4a;
+      color: #a8e6a8;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a9e4a'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    #seasonSelect:hover { border-color: #7ec87e; }
+
+    .past-badge {
+      background: #1a3a1a;
+      border: 1px solid #2a5a2a;
+      color: #4a7a4a;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      display: none;
+    }
+
+    .past-badge.visible { display: inline-block; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 32px;
+      background: #0d1f0d;
+      border-bottom: 1px solid #1a3a1a;
+    }
+
+    .tab-btn {
+      background: #142414;
+      border: 1px solid #2a5a2a;
+      color: #7ec87e;
+      padding: 9px 22px;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .tab-btn:hover { background: #1e3e1e; }
+
+    .tab-btn.active {
+      background: #2a6e2a;
+      color: #d4f7d4;
+      border-color: #4a9e4a;
+      border-bottom-color: #2a6e2a;
+    }
+
+    .content {
+      padding: 36px 32px;
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+
+    .leaderboard-panel { flex: 1; min-width: 0; }
+
+    .video-panel {
+      width: 480px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 24px;
+    }
+
+    .video-panel.hidden { display: none; }
+
+    .video-box {
+      background: #0d1f0d;
+      border: 1px solid #2a5a2a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .video-header {
+      padding: 10px 16px;
+      background: #142414;
+      border-bottom: 1px solid #1a3a1a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #7ec87e;
+    }
+
+    .video-close {
+      background: none;
+      border: none;
+      color: #4a7a4a;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+      line-height: 1;
+    }
+
+    .video-close:hover { color: #f87171; }
+
+    .video-embed {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border: none;
+      display: block;
+    }
+
+    .video-error {
+      padding: 32px;
+      text-align: center;
+      color: #f87171;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .video-runner {
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      color: #4a9e4a;
+      border-top: 1px solid #1a3a1a;
+    }
+
+    tr.clickable { cursor: pointer; }
+    tr.clickable:hover td { background: #0d3a0d; }
+    tr.selected td { background: #1a3a1a !important; }
+
+    .category { display: none; }
+    .category.active { display: block; }
+
+    .category h2 {
+      font-size: 1.2rem;
+      color: #7ec87e;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .category h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1a3a1a;
+      max-width: 400px;
+    }
+
+    table {
+      width: 100%;
+      max-width: 580px;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 16px;
+      color: #4a9e4a;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 1px solid #1a3a1a;
+    }
+
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #0f2a0f;
+      font-size: 0.95rem;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #0d2a0d; }
+
+    tr.rank-1 td { background: rgba(255, 200, 0, 0.06); }
+    tr.rank-2 td { background: rgba(180, 180, 180, 0.05); }
+    tr.rank-3 td { background: rgba(180, 100, 40, 0.05); }
+
+    .rank-cell { width: 52px; color: #4a7a4a; font-size: 0.85rem; }
+
+    .medal-cell {
+      width: 64px;
+      padding: 6px 16px;
+    }
+
+    .medal-cell img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .runner { font-weight: 600; color: #c8eec8; }
+
+    .time {
+      font-family: 'Courier New', monospace;
+      color: #a8e6a8;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .empty {
+      color: #2a5a2a;
+      font-style: italic;
+      padding: 32px 0;
+      font-size: 0.95rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 80px;
+      color: #2a5a2a;
+      font-size: 1rem;
+    }
+
+    .read-only-notice {
+      display: inline-block;
+      background: #0f2a0f;
+      border: 1px solid #2a5a2a;
+      color: #4a7a4a;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-bottom: 24px;
+    }
+
+    .submit-button-link {
+      background: linear-gradient(135deg, #ffffff, #f0f0f0);
+      color: #2a5a2a;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      text-decoration: none;
+      padding: 9px 20px;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 0 12px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.3);
+      transition: all 0.2s;
+      white-space: nowrap;
+      margin-bottom: 0;
+      height: fit-content;
+    }
+    .submit-button-link:hover {
+      box-shadow: 0 -4px 20px rgba(255,255,255,0.6), 0 0 12px rgba(255,255,255,0.4);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://www.speedrun.com/static/game/pdv9zv1w/cover.png?v=b692db5" style="height:48px;width:auto;border-radius:4px;">
+  <h1>Pikmin 2 Seasonal Leaderboard</h1>
+  <div class="season-select-wrap">
+    <label>Season</label>
+    <select id="seasonSelect" onchange="onSeasonChange()"></select>
+    <span class="past-badge" id="pastBadge">ARCHIVED</span>
+  </div>
+</header>
+
+<div style="display:flex;align-items:stretch;background:#0d1f0d;border-bottom:1px solid #1a3a1a;padding:16px 32px 0;">
+  <div id="tabs" style="display:flex;gap:4px;flex:1;align-items:flex-end;"></div>
+  <a href="https://docs.google.com/forms/d/e/1FAIpQLSdy2ePtgNXXwzZmHrl5R0NWZvsWNIAvvj7jwljiu_YC2FSXMw/viewform?usp=publish-editor"
+     target="_blank"
+     class="submit-button-link"
+  >🌸 Submit Run</a>
+</div>
+
+<div class="content">
+  <div class="leaderboard-panel" id="content">
+    <div class="loading">Loading...</div>
+  </div>
+  <div class="video-panel hidden" id="videoPanel">
+    <div class="video-box">
+      <div class="video-header">
+        <span id="videoTitle">Proof</span>
+        <button class="video-close" onclick="closeVideo()">✕</button>
+      </div>
+      <div id="videoBody"></div>
+      <div class="video-runner" id="videoRunner"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // PASTE YOUR GOOGLE SCRIPT EXEC URL HERE EXPLICITLY:
+  const API_URL = "https://script.google.com/macros/s/AKfycbykx0ylCLyaZeU-dr64BaDPQD9n4f-tA9DM9nZIE_PbAqvm_Uads4dbQV7lMAa59wj4YQ/exec";
+
+  let MEDALS = ['🥇', '🥈', '🥉'];
+  let SEASONS = [];
+  let currentTabIndex = 0;
+  let selectedRow = null;
+
+  // Bootstrapping initialization over native fetch
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => init(data))
+    .catch(err => {
+      document.getElementById('content').innerHTML =
+        `<p style="color:#f87171;padding:32px">Error Loading API: ${err.message}</p>`;
+    });
+
+  function init(data) {
+    SEASONS = data.seasons;
+    MEDALS = data.medals;
+
+    const select = document.getElementById('seasonSelect');
+    select.innerHTML = '';
+    
+    SEASONS.forEach((s, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = s.label;
+      if (s.current) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    render(data.leaderboard, SEASONS.findIndex(s => s.current));
+  }
+
+  function onSeasonChange() {
+    const idx = parseInt(document.getElementById('seasonSelect').value);
+    const season = SEASONS[idx];
+
+    document.getElementById('pastBadge').classList.toggle('visible', !season.current);
+    document.getElementById('content').innerHTML = '<div class="loading">Loading...</div>';
+    document.getElementById('tabs').innerHTML = '';
+
+    // Fetch dynamic season archival parameters across the backend endpoint
+    fetch(`${API_URL}?action=getLeaderboardJSON&sheet=${encodeURIComponent(season.sheet)}`)
+      .then(res => res.json())
+      .then(lb => render(lb, idx))
+      .catch(err => {
+        document.getElementById('content').innerHTML =
+          `<p style="color:#f87171;padding:32px">Error Loading Season Data: ${err.message}</p>`;
+      });
+  }
+
+  function render(data, seasonIdx) {
+    const tabs = document.getElementById('tabs');
+    const content = document.getElementById('content');
+    const isCurrent = SEASONS[seasonIdx] && SEASONS[seasonIdx].current;
+    
+    tabs.innerHTML = '';
+    content.innerHTML = '';
+
+    data.forEach((cat, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (i === currentTabIndex ? ' active' : '');
+      btn.textContent = cat.category;
+      btn.onclick = () => switchTab(i);
+      tabs.appendChild(btn);
+
+      const div = document.createElement('div');
+      div.className = 'category' + (i === currentTabIndex ? ' active' : '');
+
+      let html = `<h2>${esc(cat.category)}</h2>`;
+
+      if (!isCurrent) {
+        html += `<span class="read-only-notice">📦 Archived season — read only</span>`;
+      }
+
+      if (cat.entries.length === 0) {
+        html += `<p class="empty">No runs submitted yet — be the first! 🌱</p>`;
+      } else {
+        const rows = cat.entries.map((e, idx) => {
+          const medalHtml = idx < 3
+            ? `<td class="medal-cell"><img src="${esc(MEDALS[idx])}" alt="${idx+1}"></td>`
+            : `<td class="rank-cell">${idx + 1}</td>`;
+          const rowClass = idx < 3 ? `rank-${idx+1}` : '';
+          
+          return `
+            <tr class="clickable ${rowClass}" onclick="openVideo('${esc(e.proof)}', '${esc(e.name)}', '${esc(cat.category)}')">
+              ${medalHtml}
+              <td class="runner">${esc(e.name)}</td>
+              <td class="time">${esc(e.time)}</td>
+            </tr>`;
+        }).join('');
+
+        html += `
+          <table>
+            <thead><tr>
+              <th>#</th><th>Runner</th><th>Time</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+
+      div.innerHTML = html;
+      content.appendChild(div);
+    });
+  }
+
+  function switchTab(i) {
+    currentTabIndex = i;
+    document.querySelectorAll('.tab-btn').forEach((b, j) =>
+      b.classList.toggle('active', i === j));
+    document.querySelectorAll('.category').forEach((c, j) =>
+      c.classList.toggle('active', i === j));
+  }
+
+  function openVideo(url, runner, category) {
+    const panel = document.getElementById('videoPanel');
+    const body = document.getElementById('videoBody');
+    const runnerLabel = document.getElementById('videoRunner');
+    
+    if (selectedRow) {
+      selectedRow.classList.remove('selected');
+    }
+    
+    if (window.event && window.event.currentTarget) {
+      selectedRow = window.event.currentTarget;
+      selectedRow.classList.add('selected');
+    }
+
+    runnerLabel.textContent = `Runner: ${runner} (${category})`;
+    panel.classList.remove('hidden');
+    
+    let embedUrl = '';
+    
+    if (url.includes('youtube.com/watch')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('youtube.com/shorts/')) {
+      const videoId = url.split('/shorts/')[1]?.split('?')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('twitch.tv/videos/')) {
+      const videoId = url.split('/videos/')[1]?.split('?')[0];
+      
+      // Explicit parent frame allowance for GitHub pages and local testing
+      const parent1 = "script.google.com";
+      const parent2 = window.location.hostname;
+      
+      embedUrl = `https://player.twitch.tv/?video=${videoId}&parent=${parent1}&parent=${parent2}&autoplay=false`;
+    }
+
+    if (embedUrl) {
+      body.innerHTML = `<iframe class="video-embed" src="${embedUrl}" allowfullscreen></iframe>`;
+    } else {
+      body.innerHTML = `
+        <div class="video-error">
+          <p>This layout doesn't support embedding this link structure directly.</p>
+          <br>
+          <a href="${esc(url)}" target="_blank" style="color: #7ec87e; text-decoration: underline;">Open External Proof Link ↗</a>
+        </div>`;
+    }
+  }
+
+  function closeVideo() {
+    document.getElementById('videoPanel').classList.add('hidden');
+    document.getElementById('videoBody').innerHTML = '';
+    
+    if (selectedRow) {
+      selectedRow.classList.remove('selected');
+      selectedRow = null;
+    }
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
