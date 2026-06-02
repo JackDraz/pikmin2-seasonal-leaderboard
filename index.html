@@ -349,7 +349,7 @@
   let selectedRow = null;
 
   // Bootstrapping initialization over native fetch
-  fetch(API_URL)
+  fetch(`${API_URL}?v=${Date.now()}`)
     .then(res => res.json())
     .then(data => init(data))
     .catch(err => {
@@ -384,7 +384,7 @@
     document.getElementById('tabs').innerHTML = '';
 
     // Fetch dynamic season archival parameters across the backend endpoint
-    fetch(`${API_URL}?action=getLeaderboardJSON&sheet=${encodeURIComponent(season.sheet)}`)
+    fetch(`${API_URL}?action=getLeaderboardJSON&sheet=${encodeURIComponent(season.sheet)}&v=${Date.now()}`)
       .then(res => res.json())
       .then(lb => render(lb, idx))
       .catch(err => {
